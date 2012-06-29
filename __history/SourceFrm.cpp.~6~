@@ -1,0 +1,71 @@
+//---------------------------------------------------------------------------
+
+#include <vcl.h>
+#pragma hdrstop
+
+#include "SourceFrm.h"
+#include "bass.h"
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+#pragma resource "*.dfm"
+TSourceForm *SourceForm;
+//---------------------------------------------------------------------------
+__fastcall TSourceForm::TSourceForm(TComponent* Owner)
+	: TForm(Owner)
+{
+}
+//---------------------------------------------------------------------------
+void __fastcall TSourceForm::FormShow(TObject *Sender)
+{
+	int		count = 0;	/* the device counter */
+	char	*pDesc = (char *) 1;
+
+	BASS_RecordInit(0);
+
+	//m_BASSOpen = 1;
+
+	int		n;
+	char	*name;
+	int		currentInput = 0;
+
+	BASS_DEVICEINFO info;
+
+	for (int a=0; BASS_RecordGetDeviceInfo(a, &info); a++) {
+		if (info.flags&BASS_DEVICE_ENABLED) {
+			InputSourceCb->Items->Add(info.name) ;
+			//	m_RecCardsCtrl.AddString(info.name);
+			//if (!strcmp(getWindowsRecordingDevice(&gMain), "")) {
+			//	m_RecCards = info.name;
+			//	m_CurrentInputCard = a;
+			//}
+			//else {
+			//	if (!strcmp(getWindowsRecordingDevice(&gMain), info.name)) {
+			//		m_RecCards = info.name;
+			//		m_CurrentInputCard = a;
+			//	}
+			//}
+		}
+
+	}
+	/*
+	for(n = 0; name = (char *)BASS_RecordGetInputName(n); n++) {
+		float vol = 0.0;
+		int s = BASS_RecordGetInput(n, &vol);
+		m_RecDevicesCtrl.AddString(name);
+		if(s & BASS_INPUT_OFF) {
+			;
+		}
+		else {
+			m_RecDevices = name;
+			//m_RecVolume = LOWORD(s);
+			m_RecVolume = vol*100;
+			m_CurrentInput = n;
+		}
+	}
+	*/
+
+	m_BASSOpen = 0;
+	BASS_RecordFree();
+}
+//---------------------------------------------------------------------------
+

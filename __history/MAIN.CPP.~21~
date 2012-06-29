@@ -1,0 +1,103 @@
+//---------------------------------------------------------------------------
+#include <vcl.h>
+#pragma hdrstop
+
+#include "Main.h"
+#include "About.h"
+#include "StreamsFrm.h"
+//---------------------------------------------------------------------------
+#pragma resource "*.dfm"
+TMainForm *MainForm;
+//---------------------------------------------------------------------------
+
+__fastcall TMainForm::TMainForm(TComponent *Owner)
+	: TForm(Owner)
+{
+	_config = new KarisanStreamerConfig() ;
+	initializeForms() ;
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TMainForm::CreateMDIChild(String Name)
+{
+	TMDIChild *Child;
+
+	//--- create a new MDI child window ----
+	Child = new TMDIChild(Application);
+	Child->Caption = Name;
+	if (FileExists (Name))
+		Child->Memo1->Lines->LoadFromFile(Name);
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TMainForm::initializeForms(void)
+{
+	streamsForm = NULL ;
+	sourceForm = NULL ;
+	outputForm = NULL ;
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TMainForm::FileNew1Execute(TObject *Sender)
+{
+	CreateMDIChild("NONAME" + IntToStr(MDIChildCount + 1));
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TMainForm::FileOpen1Execute(TObject *Sender)
+{
+	if (OpenDialog->Execute())
+		CreateMDIChild(OpenDialog->FileName);
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TMainForm::HelpAbout1Execute(TObject *Sender)
+{
+	AboutBox->ShowModal();
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TMainForm::FileExit1Execute(TObject *Sender)
+{
+	Close();
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TMainForm::showForms(void)
+{
+	if(!streamsForm)
+		streamsForm = new TStreamsForm(Application, _config);
+	streamsForm->Show() ;
+
+	if (!sourceForm) {
+		sourceForm = new TSourceForm(Application, _config) ;
+	}
+	sourceForm->Show() ;
+
+	if(!outputForm) {
+		outputForm = new TOutputForm(Application, _config) ;
+	}
+	outputForm->Show() ;
+
+	if(!mediaLibraryForm) {
+		mediaLibraryForm = new TMediaLibraryForm(Application, _config) ;
+	}
+	mediaLibraryForm->Show() ;
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TMainForm::FormActivate(TObject *Sender)
+{
+	showForms() ;
+}
+//---------------------------------------------------------------------------
+
+void __fastcall TMainForm::FormDestroy(TObject *Sender)
+{
+	delete streamsForm ;
+	delete sourceForm ;
+	delete outputForm ;
+	delete mediaLibraryForm ;
+}
+//---------------------------------------------------------------------------
+

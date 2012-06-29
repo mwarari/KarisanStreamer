@@ -1,0 +1,280 @@
+﻿	<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+		<PropertyGroup>
+			<ProjectGuid>{98a1b52a-33f3-4d44-8e32-9ef124921307}</ProjectGuid>
+			<MainSource>KarisanStreamer.cpp</MainSource>
+			<Config Condition="'$(Config)'==''">Debug</Config>
+			<ProjectVersion>12.0</ProjectVersion>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='Base' or '$(Base)'!=''">
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='Debug' or '$(Cfg_1)'!=''">
+			<Cfg_1>true</Cfg_1>
+			<CfgParent>Base</CfgParent>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Config)'=='Release' or '$(Cfg_2)'!=''">
+			<Cfg_2>true</Cfg_2>
+			<CfgParent>Base</CfgParent>
+			<Base>true</Base>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Base)'!=''">
+			<LinkPackageStatics>VclSmp.lib</LinkPackageStatics>
+			<LinkPackageImports>rtl.bpi;vcl.bpi;vclx.bpi</LinkPackageImports>
+			<OutputExt>exe</OutputExt>
+			<DCC_CBuilderOutput>JPHNE</DCC_CBuilderOutput>
+			<ILINK_FullDebugInfo>true</ILINK_FullDebugInfo>
+			<BCC_InlineFunctionExpansion>false</BCC_InlineFunctionExpansion>
+			<BCC_UseRegisterVariables>None</BCC_UseRegisterVariables>
+			<ILINK_AppType>Windows</ILINK_AppType>
+			<BCC_GenerateWindowsApp>true</BCC_GenerateWindowsApp>
+			<BCC_DebugLineNumbers>true</BCC_DebugLineNumbers>
+			<UsePackages>true</UsePackages>
+			<BCC_ZeroLengthEmptyMemberFuncs>true</BCC_ZeroLengthEmptyMemberFuncs>
+			<PackageImports>rtl.bpi;vcl.bpi;vclx.bpi</PackageImports>
+			<BCC_GenerateMultithreaded>true</BCC_GenerateMultithreaded>
+			<BCC_StackFrames>true</BCC_StackFrames>
+			<BCC_PCHCache>true</BCC_PCHCache>
+			<IncludePath>..\..\..\Libs\Cpp\BladeDLL\;..\..\..\Libs\Cpp\lame\lame-3.99.5\include\;..\..\..\Libs\Cpp\bass24\cpp\;..\..\..\Libs\Cpp\bass24\c\;$(BDS)\include;$(BDS)\include\vcl;$(BDS)\include\dinkumware;D:\Moses\Libs\Cpp\TagLib\taglib-1.7.1\include;D:\Moses\Libs\Cpp\TagLib\taglib-1.7.1;D:\Moses\Libs\Cpp\lame\lame-3.99.5\include;D:\Moses\Libs\Cpp\lame\lame-3.99.5\mpglib;D:\Moses\Libs\Cpp\lame\lame-3.99.5\Dll;$(IncludePath)</IncludePath>
+			<BCC_IntegerSizedEnums>false</BCC_IntegerSizedEnums>
+			<AllPackageLibs>rtl.lib;vcl.lib;vclx.lib;VclSmp.lib</AllPackageLibs>
+			<BCC_InternalDefines>NO_STRICT</BCC_InternalDefines>
+			<BCC_ZeroLengthEmptyBaseClass>true</BCC_ZeroLengthEmptyBaseClass>
+			<ILINK_LibraryPath>..\..\..\Libs\Cpp\BladeDLL\;..\..\..\Libs\Cpp\lame\lame-3.99.5\include\;..\..\..\Libs\Cpp\lame\lame-3.99.5\;..\..\..\Libs\Cpp\TagLib\taglib-1.7.1\;..\..\..\Libs\Cpp\id3lib-3.8.3\;..\..\..\Libs\Cpp\bass24\cpp\;..\..\..\Libs\Cpp\bass24\;..\..\..\Libs\Cpp\bass24\c\;$(BDS)\lib\obj;$(ILINK_LibraryPath)</ILINK_LibraryPath>
+			<BCC_SourceDebuggingOn>true</BCC_SourceDebuggingOn>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_1)'!=''">
+			<DCC_Optimize>false</DCC_Optimize>
+			<DCC_DebugInfoInExe>true</DCC_DebugInfoInExe>
+			<ILINK_DisableIncrementalLinking>true</ILINK_DisableIncrementalLinking>
+			<DCC_Define>DEBUG;$(DCC_Define)</DCC_Define>
+			<IntermediateOutputDir>Debug</IntermediateOutputDir>
+			<TASM_DisplaySourceLines>true</TASM_DisplaySourceLines>
+			<ILINK_LibraryPath>$(BDS)\lib\debug;$(ILINK_LibraryPath)</ILINK_LibraryPath>
+			<BCC_Defines>_DEBUG;$(BCC_Defines)</BCC_Defines>
+			<TASM_Debugging>Full</TASM_Debugging>
+		</PropertyGroup>
+		<PropertyGroup Condition="'$(Cfg_2)'!=''">
+			<BCC_OptimizeForSpeed>true</BCC_OptimizeForSpeed>
+			<BCC_InlineFunctionExpansion>true</BCC_InlineFunctionExpansion>
+			<BCC_UseRegisterVariables>Always</BCC_UseRegisterVariables>
+			<DCC_DebugInformation>false</DCC_DebugInformation>
+			<IntermediateOutputDir>Release</IntermediateOutputDir>
+			<BCC_StackFrames>false</BCC_StackFrames>
+			<ILINK_LibraryPath>$(BDS)\lib\release;$(ILINK_LibraryPath)</ILINK_LibraryPath>
+			<BCC_Defines>NDEBUG;$(BCC_Defines)</BCC_Defines>
+			<TASM_Debugging>None</TASM_Debugging>
+		</PropertyGroup>
+		<ItemGroup>
+			<CppCompile Include="CurrentPlayList.cpp">
+				<DependentOn>CurrentPlayList.h</DependentOn>
+				<BuildOrder>13</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="SongInfo.cpp">
+				<DependentOn>SongInfo.h</DependentOn>
+				<BuildOrder>14</BuildOrder>
+			</CppCompile>
+			<None Include="..\..\..\Libs\Cpp\bass24\cpp\bass.hpp">
+				<BuildOrder>16</BuildOrder>
+			</None>
+			<CppCompile Include="StreamsFrm.cpp">
+				<Form>StreamsForm</Form>
+				<DependentOn>StreamsFrm.h</DependentOn>
+				<BuildOrder>5</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="OutputFrm.cpp">
+				<Form>OutputForm</Form>
+				<DependentOn>OutputFrm.h</DependentOn>
+				<BuildOrder>8</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\..\..\Libs\Cpp\bass24\cpp\bass.cpp">
+				<BuildOrder>15</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="CHILDWIN.CPP">
+				<Form>MDIChild</Form>
+				<BuildOrder>2</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="KarisanStreamerConfig.cpp">
+				<DependentOn>KarisanStreamerConfig.h</DependentOn>
+				<BuildOrder>17</BuildOrder>
+			</CppCompile>
+			<LibFiles Include="..\..\..\Libs\Cpp\TagLib\taglib-1.7.1\TagLib.lib">
+				<IgnorePath>true</IgnorePath>
+				<BuildOrder>18</BuildOrder>
+			</LibFiles>
+			<LibFiles Include="..\..\..\Libs\Cpp\lame\lame-3.99.5\libmp3lame.lib">
+				<IgnorePath>true</IgnorePath>
+				<BuildOrder>25</BuildOrder>
+			</LibFiles>
+			<CppCompile Include="MediaLibraryFrm.cpp">
+				<Form>MediaLibraryForm</Form>
+				<DependentOn>MediaLibraryFrm.h</DependentOn>
+				<BuildOrder>12</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="IceCastStreamer.cpp">
+				<DependentOn>IceCastStreamer.h</DependentOn>
+				<BuildOrder>21</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="about.cpp">
+				<Form>AboutBox</Form>
+				<BuildOrder>4</BuildOrder>
+			</CppCompile>
+			<None Include="ModelSupport_KarisanStreamer\default.txaPackage"/>
+			<CppCompile Include="AudioStreamer.cpp">
+				<DependentOn>AudioStreamer.h</DependentOn>
+				<BuildOrder>19</BuildOrder>
+			</CppCompile>
+			<LibFiles Include="..\..\..\Libs\Cpp\bass24\bass.lib">
+				<IgnorePath>true</IgnorePath>
+				<BuildOrder>11</BuildOrder>
+			</LibFiles>
+			<None Include="..\..\..\Libs\Cpp\bass24\c\bass.h">
+				<BuildOrder>11</BuildOrder>
+			</None>
+			<CppCompile Include="SourceFrm.cpp">
+				<Form>SourceForm</Form>
+				<DependentOn>SourceFrm.h</DependentOn>
+				<BuildOrder>7</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="KarisanStreamer.cpp">
+				<BuildOrder>0</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="StreamConfig.cpp">
+				<DependentOn>StreamConfig.h</DependentOn>
+				<BuildOrder>9</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="MAIN.CPP">
+				<Form>MainForm</Form>
+				<BuildOrder>1</BuildOrder>
+			</CppCompile>
+			<None Include="ModelSupport_KarisanStreamer\default.txvpck"/>
+			<CppCompile Include="TMySocket.cpp">
+				<DependentOn>TMySocket.h</DependentOn>
+				<BuildOrder>20</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="StreamSettingsFrm.cpp">
+				<Form>StreamSettingsForm</Form>
+				<DependentOn>StreamSettingsFrm.h</DependentOn>
+				<BuildOrder>6</BuildOrder>
+			</CppCompile>
+			<ResFiles Include="KarisanStreamer.res">
+				<BuildOrder>3</BuildOrder>
+			</ResFiles>
+			<LibFiles Include="..\..\..\Libs\Cpp\lame\lame-3.99.5\lame_enc.lib">
+				<IgnorePath>true</IgnorePath>
+				<BuildOrder>26</BuildOrder>
+			</LibFiles>
+			<CppCompile Include="Utils.cpp">
+				<DependentOn>Utils.h</DependentOn>
+				<BuildOrder>27</BuildOrder>
+			</CppCompile>
+			<None Include="..\..\..\Libs\Cpp\lame\lame-3.99.5\include\lame.h">
+				<BuildOrder>27</BuildOrder>
+			</None>
+			<CppCompile Include="ReSampler.cpp">
+				<DependentOn>ReSampler.h</DependentOn>
+				<BuildOrder>28</BuildOrder>
+			</CppCompile>
+			<CppCompile Include="..\..\..\Libs\Cpp\BladeDLL\BladeMP3EncDLL.c">
+				<BuildOrder>29</BuildOrder>
+			</CppCompile>
+			<None Include="..\..\..\Libs\Cpp\BladeDLL\BladeMP3EncDLL.h">
+				<BuildOrder>30</BuildOrder>
+			</None>
+			<FormResources Include="StreamsFrm.dfm"/>
+			<FormResources Include="OutputFrm.dfm"/>
+			<FormResources Include="CHILDWIN.dfm"/>
+			<FormResources Include="MediaLibraryFrm.dfm"/>
+			<FormResources Include="about.dfm"/>
+			<FormResources Include="SourceFrm.dfm"/>
+			<FormResources Include="MAIN.dfm"/>
+			<FormResources Include="StreamSettingsFrm.dfm"/>
+			<BuildConfiguration Include="Base">
+				<Key>Base</Key>
+			</BuildConfiguration>
+			<BuildConfiguration Include="Release">
+				<Key>Cfg_2</Key>
+				<CfgParent>Base</CfgParent>
+			</BuildConfiguration>
+			<BuildConfiguration Include="Debug">
+				<Key>Cfg_1</Key>
+				<CfgParent>Base</CfgParent>
+			</BuildConfiguration>
+		</ItemGroup>
+		<Import Project="$(BDS)\Bin\CodeGear.Cpp.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Cpp.Targets')"/>
+		<ProjectExtensions>
+			<Borland.Personality>CPlusPlusBuilder.Personality.12</Borland.Personality>
+			<Borland.ProjectType/>
+			<BorlandProject>
+				<CPlusPlusBuilder.Personality>
+					<VersionInfo>
+						<VersionInfo Name="IncludeVerInfo">False</VersionInfo>
+						<VersionInfo Name="AutoIncBuild">False</VersionInfo>
+						<VersionInfo Name="MajorVer">1</VersionInfo>
+						<VersionInfo Name="MinorVer">0</VersionInfo>
+						<VersionInfo Name="Release">0</VersionInfo>
+						<VersionInfo Name="Build">0</VersionInfo>
+						<VersionInfo Name="Debug">False</VersionInfo>
+						<VersionInfo Name="PreRelease">False</VersionInfo>
+						<VersionInfo Name="Special">False</VersionInfo>
+						<VersionInfo Name="Private">False</VersionInfo>
+						<VersionInfo Name="DLL">False</VersionInfo>
+						<VersionInfo Name="Locale">1033</VersionInfo>
+						<VersionInfo Name="CodePage">1252</VersionInfo>
+					</VersionInfo>
+					<VersionInfoKeys>
+						<VersionInfoKeys Name="CompanyName"/>
+						<VersionInfoKeys Name="FileDescription"/>
+						<VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys>
+						<VersionInfoKeys Name="InternalName"/>
+						<VersionInfoKeys Name="LegalCopyright"/>
+						<VersionInfoKeys Name="LegalTrademarks"/>
+						<VersionInfoKeys Name="OriginalFilename"/>
+						<VersionInfoKeys Name="ProductName"/>
+						<VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys>
+						<VersionInfoKeys Name="Comments"/>
+					</VersionInfoKeys>
+					<Debugging>
+						<Debugging Name="DebugSourceDirs"/>
+					</Debugging>
+					<Parameters>
+						<Parameters Name="RunParams"/>
+						<Parameters Name="Launcher"/>
+						<Parameters Name="UseLauncher">False</Parameters>
+						<Parameters Name="DebugCWD"/>
+						<Parameters Name="HostApplication"/>
+						<Parameters Name="RemoteHost"/>
+						<Parameters Name="RemotePath"/>
+						<Parameters Name="RemoteParams"/>
+						<Parameters Name="RemoteLauncher"/>
+						<Parameters Name="UseRemoteLauncher">False</Parameters>
+						<Parameters Name="RemoteCWD"/>
+						<Parameters Name="RemoteDebug">False</Parameters>
+						<Parameters Name="Debug Symbols Search Path"/>
+						<Parameters Name="LoadAllSymbols">True</Parameters>
+						<Parameters Name="LoadUnspecifiedSymbols">False</Parameters>
+					</Parameters>
+					<Compiler>
+						<Compiler Name="ShowInfoMsgs">False</Compiler>
+						<Compiler Name="LinkDebugVcl">False</Compiler>
+					</Compiler>
+					<Linker>
+						<Linker Name="LibPrefix"/>
+						<Linker Name="LibSuffix"/>
+						<Linker Name="LibVersion"/>
+					</Linker>
+					<Source>
+						<Source Name="MainSource">KarisanStreamer.cpp</Source>
+					</Source>
+					<ProjectProperties>
+						<ProjectProperties Name="AutoShowDeps">False</ProjectProperties>
+						<ProjectProperties Name="ManagePaths">True</ProjectProperties>
+						<ProjectProperties Name="VerifyPackages">True</ProjectProperties>
+					</ProjectProperties>
+					<Folders/>
+				</CPlusPlusBuilder.Personality>
+				<ModelSupport>True</ModelSupport>
+			</BorlandProject>
+			<ProjectFileVersion>12</ProjectFileVersion>
+		</ProjectExtensions>
+	</Project>

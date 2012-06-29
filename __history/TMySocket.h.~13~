@@ -1,0 +1,36 @@
+//---------------------------------------------------------------------------
+
+#ifndef TMySocketH
+#define TMySocketH
+
+#include <string>
+
+#include <windows.h>
+
+#ifndef SOCKET
+	#define SOCKET int
+#endif
+//---------------------------------------------------------------------------
+
+using namespace std ;
+
+class TMySocket
+{
+	public:
+		TMySocket();
+		virtual ~TMySocket() ;
+
+		void initWinsockLib(void) ;
+		void socketErrorExit(string error) ;
+		SOCKET doListen(unsigned short portnum) ;
+		SOCKET doAccept(SOCKET s) ;
+		SOCKET doConnect(string host, unsigned short portnum) ;
+		int doClose() ;
+		void checkSocketError(int error, string message) ;
+		void cleanAndExit(int error) ;
+		SOCKET getSocket() ;
+	protected:
+		SCOKET _socket ;
+
+};
+#endif

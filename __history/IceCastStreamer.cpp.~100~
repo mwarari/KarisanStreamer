@@ -1,0 +1,992 @@
+//---------------------------------------------------------------------------
+
+
+#pragma hdrstop
+
+#include <assert.h>
+#include <sstream>
+
+#include "IceCastStreamer.h"
+#include "Base64.h"
+#include "BladeMP3EncDLL.h"
+#include "Utils.h"
+
+//---------------------------------------------------------------------------
+
+#pragma package(smart_init)
+
+IceCastStreamer::IceCastStreamer(StreamConfig *stream_config)
+{
+	_connected = false ;
+	_stream_config = stream_config ;
+}
+//---------------------------------------------------------------------------
+
+IceCastStreamer::~IceCastStreamer()
+{
+	if(_connected)
+		disconnect() ;
+}
+//---------------------------------------------------------------------------
+
+bool IceCastStreamer::connect()
+{
+	bool ret ;
+
+	ret = connectDataChannel(_stream_config->getServerIP(), _stream_config->getServerPort());
+
+	if(ret == false)
+		return(false) ;
+
+	stringstream audio_info ;
+
+	/*
+	sprintf(audioInfo,
+		"ice-samplerate=%d;ice-bitrate=%d;ice-channels=%d",
+		_sample_rate,
+		_yp_bitrate,
+		_channels);
+	*/
+	audio_info << "ice-samplerate=" << _stream_config->getSampleRate() << ";ice-bitrate=" << _stream_config->getBitRate() << ";ice-channels=" << _channels ;
+
+	string user_auth ;
+	Utils util ;
+	stringstream content_string ;
+
+	// sprintf(userAuth, "source:%s", _password.c_str());
+	user_auth = "source:" + _stream_config->getPassword() ;
+
+	string user_auth_base64 = util.base64Encode(user_auth);
+
+	if(user_auth_base64.length()) {
+		/*
+		sprintf(contentString,
+			"SOURCE %s ICE/1.0\ncontent-type: %s\nAuthorization: Basic %s\nice-name: %s\nice-url: %s\nice-genre: %s\nice-bitrate: %d\nice-private: %d\nice-public: %d\nice-description: %s\nice-audio-info: %s\n\n",
+				_mount_point.c_str(),
+				_content_type.c_str(),
+				puserAuthbase64,
+				_server_name.c_str(),
+				_server_url.c_str(),
+				_server_genre.c_str(),
+				_yp_bitrate,
+				!_public_server,
+				_public_server,
+				_server_description.c_str(),
+				audioInfo);
+		*/
+		content_string << "SOURCE " << _stream_config->getMountPoint() << " ICE/1.0\ncontent-type: " << _content_type << "\nAuthorization: Basic " << user_auth_base64 << "\nice-name: " << _stream_config->getYPStreamName() << "\nice-url: " << _stream_config->getStreamURL() << "\nice-genre: " << _stream_config->getStreamGenre() << "\nice-bitrate: " << _stream_config->getBitRate() << "\nice-private: " << (int)!_stream_config->getPublicServer() << "\nice-public: " << (int)_stream_config->getPublicServer() << "\nice-description: " << _stream_config->getStreamDescription() << "\nice-audio-info: " << audio_info.str() << "\n\n" ;
+		// free(puserAuthbase64);
+	}
+
+	int bytes_sent = sendToDataChannel((char *)content_string.str().c_str(), content_string.str().length(), HEADER_TYPE) ;
+
+	if(bytes_sent <= 0) {
+		disconnect() ;
+		return(false) ;
+	}
+
+	char buffer[1024] = "" ;
+
+	receiveFromDataChannel(buffer, sizeof(buffer));
+	if(strlen(buffer)) {
+		string str_buff = buffer ;
+
+		if(str_buff.find("OK") == string::npos) {
+			ret = false ;
+			disconnect() ;
+		} else {
+			ret = true ;
+		}
+	}
+	return(ret) ;
+}
+//---------------------------------------------------------------------------
+
+bool IceCastStreamer::disconnect()
+{
+	int ret = -1 ;
+
+	ret = closeDataChannel() ;
+	if(ret == 0) {
+		return(true) ;
+	} else {
+		return(false) ;
+	}
+}
+//---------------------------------------------------------------------------
+
+void IceCastStreamer::setChannels(int value)
+{
+	_channels = value ;
+}
+//---------------------------------------------------------------------------
+
+int IceCastStreamer::getChannels()
+{
+	return(_channels) ;
+}
+//---------------------------------------------------------------------------
+
+int IceCastStreamer::initializeEncoder() {
+	int		ret = 0;
+	char	outFilename[1024] = "";
+	char	message[1024] = "";
+
+	resetResampler();
+
+	if(_lame_flag)
+	{
+		BE_ERR		err = 0;
+		BE_VERSION	Version = { 0, };
+		BE_CONFIG	beConfig = { 0, };
+
+		/* Get the version number */
+		beVersion(&Version);
+
+		if(Version.byMajorVersion < 3) {
+			sprintf(message,
+					"This version of edcast expects at least version 3.91 of the LAME DLL, the DLL found is at %u.%02u, please consider upgrading",
+				Version.byDLLMajorVersion,
+					Version.byDLLMinorVersion);
+
+		} else {
+			if(Version.byMinorVersion < 91) {
+				sprintf(message,
+						"This version of edcast expects at least version 3.91 of the LAME DLL, the DLL found is at %u.%02u, please consider upgrading",
+					Version.byDLLMajorVersion,
+						Version.byDLLMinorVersion);
+			}
+		}
+
+		/* Check if all interfaces are present */
+		memset(&beConfig, 0, sizeof(beConfig)); /* clear all fields */
+
+		/* use the LAME config structure */
+		beConfig.dwConfig = BE_CONFIG_LAME;
+
+		if(_channels == 1) {
+			beConfig.format.LHV1.nMode = BE_MP3_MODE_MONO;
+		} else {
+			if (_joint_stereo) {
+				beConfig.format.LHV1.nMode = BE_MP3_MODE_JSTEREO;
+			} else {
+				beConfig.format.LHV1.nMode = BE_MP3_MODE_STEREO;
+			}
+		}
+
+		/* this are the default settings for testcase.wav */
+		beConfig.format.LHV1.dwStructVersion = 1;
+		beConfig.format.LHV1.dwStructSize = sizeof(beConfig);
+		beConfig.format.LHV1.dwSampleRate = _stream_config->getSampleRate() ;	/* INPUT FREQUENCY */
+		beConfig.format.LHV1.dwReSampleRate = _stream_config->getSampleRate() ; /* DON"T RESAMPLE */
+
+		/*
+		 * beConfig.format.LHV1.dwReSampleRate = 0;
+		 */
+		beConfig.format.LHV1.dwBitrate = _stream_config->getBitRate() ;			/* MINIMUM BIT RATE */
+		if(_lame_preset > 0) {
+			beConfig.format.LHV1.nPreset = _lame_preset;
+		}
+
+		beConfig.format.LHV1.dwMpegVersion = MPEG1;					/* MPEG VERSION (I or II) */
+		beConfig.format.LHV1.dwPsyModel = 0;						/* USE DEFAULT PSYCHOACOUSTIC MODEL */
+		beConfig.format.LHV1.dwEmphasis = 0;						/* NO EMPHASIS TURNED ON */
+		beConfig.format.LHV1.bWriteVBRHeader = TRUE;				/* YES, WRITE THE XING VBR HEADER */
+
+		if(_lame_options.cbrflag) {
+			beConfig.format.LHV1.bEnableVBR = FALSE;
+		} else {
+			beConfig.format.LHV1.bEnableVBR = TRUE;
+			beConfig.format.LHV1.dwMaxBitrate = _current_bitrate_max;
+			beConfig.format.LHV1.dwBitrate = _current_bitrate_max;		/* MINIMUM BIT RATE */
+		}
+
+		beConfig.format.LHV1.nVBRQuality = _lame_options.quality;
+
+		beConfig.format.LHV1.nVbrMethod = VBR_METHOD_DEFAULT;
+		if(!strcmp(_lame_options.VBR_mode, "vbr_rh")) {
+			beConfig.format.LHV1.nVbrMethod = VBR_METHOD_OLD;
+		}
+
+		if(!strcmp(_lame_options.VBR_mode, "vbr_mtrh")) {
+			beConfig.format.LHV1.nVbrMethod = VBR_METHOD_MTRH;
+		}
+
+		if(!strcmp(_lame_options.VBR_mode, "vbr_abr")) {
+			beConfig.format.LHV1.nVbrMethod = VBR_METHOD_ABR;
+		}
+
+		beConfig.format.LHV1.bNoRes = TRUE;					/* No Bit resorvoir */
+
+		err = beInitStream(&beConfig, &_samples, &_buffer_size, &_hbe_stream);
+
+		if(err != BE_ERR_SUCCESSFUL) {
+			sprintf(message, "Error opening encoding stream (%lu)", err);
+			return 0;
+		}
+	}
+	return 1;
+}
+//---------------------------------------------------------------------------
+
+int IceCastStreamer::resetResampler() {
+	if(_initialized_resampler) {
+		res_clear(&_resampler);
+	}
+
+	_initialized_resampler = 0;
+	return 1;
+}
+//---------------------------------------------------------------------------
+
+void IceCastStreamer::res_clear(res_state *state)
+{
+	assert(state);
+	assert(state->table);
+	assert(state->pool);
+
+	free(state->table);
+	free(state->pool);
+	memset(state, 0, sizeof(*state));
+}
+//---------------------------------------------------------------------------
+
+void IceCastStreamer::setStreamConfig(StreamConfig *value)
+{
+	_stream_config = value ;
+}
+//---------------------------------------------------------------------------
+
+int IceCastStreamer::setCurrentSongTitle(char *song)
+{
+	string	current;
+	char	modifiedSong[1024] = "";
+
+	if(_lock_song_title) {
+		current = _manual_song_title;
+	} else {
+		current = song;
+	}
+
+	if(_song_title != current) {
+		_song_title = current ;
+		updateSongTitle(0);
+		return 1;
+	}
+
+	return 0;
+}
+//---------------------------------------------------------------------------
+
+int IceCastStreamer::updateSongTitle(int forceURL)
+{
+	stringstream	content_string;
+	string	url_password ;
+	string	url_song ;
+	char	Song[1024] = "" ;
+	Utils utils ;
+
+	if(_is_connected) {
+		if((!_ogg_flag) || (forceURL)) {
+			if((_sc_flag) || (_icecast_flag) || (_icecast2_flag) || forceURL) {
+				url_password = utils.urlEncode(_stream_config->getPassword()) ;
+
+				_current_song = _song_title ;
+
+				url_password = utils.urlEncode(_current_song) ;
+
+				if(_icecast2_flag) {
+					string	user_auth ;
+
+					user_auth = "source:" + _stream_config->getPassword() ;
+
+
+					string user_auth_base64 = utils.base64Encode(user_auth);
+
+					if(user_auth_base64.length() > 0) {
+						/*
+
+						sprintf(contentString,
+								"GET /admin/metadata?pass=%s&mode=updinfo&mount=%s&song=%s HTTP/1.0\r\nAuthorization: Basic %s\r\nUser-Agent: (Mozilla Compatible)\r\n\r\n",
+							URLPassword,
+								g->gMountpoint,
+								URLSong,
+								puserAuthbase64);
+						*/
+						content_string << "GET /admin/metadata?pass=" << url_password << "&mode=updinfo&mount=" << _stream_config->getMountPoint() << "&song=" << url_song << " HTTP/1.0\r\nAuthorization: Basic " << user_auth_base64 << "\r\nUser-Agent: (Mozilla Compatible)\r\n\r\n" ;
+						// free(puserAuthbase64);
+					}
+				}
+
+				if(_icecast_flag) {
+					/*
+					sprintf(contentString,
+							"GET /admin.cgi?pass=%s&mode=updinfo&mount=%s&song=%s HTTP/1.0\r\nUser-Agent: (Mozilla Compatible)\r\n\r\n",
+						URLPassword,
+							g->gMountpoint,
+							URLSong);
+					*/
+					content_string << "GET /admin.cgi?pass=" << url_password << "&mode=updinfo&mount=" << _stream_config->getMountPoint() << "&song=" << url_song << " HTTP/1.0\r\nUser-Agent: (Mozilla Compatible)\r\n\r\n" ;
+				}
+
+				if(_sc_flag) {
+					/*
+					sprintf(contentString,
+							"GET /admin.cgi?pass=%s&mode=updinfo&song=%s HTTP/1.0\r\nUser-Agent: (Mozilla Compatible)\r\n\r\n",
+						URLPassword,
+							URLSong);
+					*/
+					content_string << "GET /admin.cgi?pass=" << url_password << "&mode=updinfo&song=" << url_song << " HTTP/1.0\r\nUser-Agent: (Mozilla Compatible)\r\n\r\n" ;
+				}
+				bool connected = connectControlChannel(_stream_config->getServerIP(), _stream_config->getServerPort()) ;
+				//g->gSCSocketControl = g->controlChannel.DoSocketConnect(g->gServer, atoi(g->gPort));
+				if(connected) {
+					int sent = send(_control_channel.getSocket(), content_string.str().c_str(), content_string.str().length(), 0);
+
+					_control_channel.doClose() ;
+				} else {
+					// LogMessage(g,LOG_ERROR, "Cannot connect to server");
+				}
+			}
+		}
+		else {
+			_ice2song_change = true;
+		}
+		return 1;
+	}
+	return 0;
+}
+//---------------------------------------------------------------------------
+
+void IceCastStreamer::stopRecording()
+{
+	BASS_ChannelStop(_recording_handle);
+	m_BASSOpen = 0;
+	BASS_RecordFree();
+	gLiveRecording = false;
+}
+//---------------------------------------------------------------------------
+
+int IceCastStreamer::startRecording(int m_CurrentInputCard)
+{
+	char	buffer[1024] = "";
+	char	buf[255] = "";
+
+	int		ret = BASS_RecordInit(_recording_input_card);
+	m_BASSOpen = 1;
+
+	if(!ret) {
+		DWORD	errorCode = BASS_ErrorGetCode();
+		switch(errorCode) {
+			case BASS_ERROR_ALREADY:
+				// pWindow->generalStatusCallback((char *) "Recording device already opened!");
+				return 0;
+
+			case BASS_ERROR_DEVICE:
+				// pWindow->generalStatusCallback((char *) "Recording device invalid!");
+				return 0;
+
+			case BASS_ERROR_DRIVER:
+				// pWindow->generalStatusCallback((char *) "Recording device driver unavailable!");
+				return 0;
+
+			default:
+				// pWindow->generalStatusCallback((char *) "There was an error opening the preferred Digital Audio In device!");
+				return 0;
+		}
+	}
+
+	_recording_handle = BASS_RecordStart(44100, 2, 0, &BASSwaveInputProc, NULL);
+
+	int		idx = 0;
+	char	*name;
+	for(idx = 0; name = (char *)BASS_RecordGetInputName(idx); idx++) {
+		float vol = 0.0;
+		DWORD status = BASS_RecordGetInput(idx, &vol);
+		if(!(status & BASS_INPUT_OFF)) {
+			char	msg[255] = "";
+			sprintf(msg, "Recording from %s", name);
+			// pWindow->generalStatusCallback((void *) msg);
+		}
+	}
+
+	_live_recording = true;
+
+	return 1;
+}
+//---------------------------------------------------------------------------
+
+BOOL CALLBACK IceCastStreamer::BASSwaveInputProc(HRECORD handle, const void *buffer, DWORD length, void *user)
+{
+	int			idx ;
+	char		*name ;
+	static char current_device[1024] = "";
+
+	if(_live_recording) {
+		for(idx = 0; name = (char *)BASS_RecordGetInputName(idx); idx++) {
+			float current_volume;
+
+			DWORD status = BASS_RecordGetInput(idx, &current_volume);
+			if(!(status & BASS_INPUT_OFF)) {
+				if(strcmp(current_device, name)) {
+					strcpy(current_device, name);
+
+					char	msg[255] = "";
+					sprintf(msg, "Recording from %s", currentDevice);
+					// pWindow->generalStatusCallback((void *) msg);
+				}
+
+				/*
+				 * setCurrentRecordingName(currentDevice);
+				 */
+			}
+		}
+
+		unsigned int	c_size = length;	/* in bytes. */
+		short			*z = (short *) buffer;	/* signed short for pcm data. */
+
+		int				num_samples = c_size / sizeof(short);
+
+		int				channels = 2;
+		int				sample_rate = 44100;
+		float			*ptr_samples;
+
+		/*
+		 * float ptr_samples[8196*16];
+		 */
+		ptr_samples = new[(sizeof(float) * numptr_samples * 2];
+		memset(ptr_samples, '\000', sizeof(float) * numptr_samples * 2);
+
+		long	avgLeft = 0;
+		long	avgRight = 0;
+		int		flip = 0;
+
+		for(int idx = 0; idx < num_samples; idx++) {
+			signed int	sample;
+			sample = z[idx];
+			ptr_samples[idx] = sample / 32767.f;
+
+			/* clipping */
+			if(ptr_samples[idx] > 1.0) {
+				ptr_samples[idx] = 1.0;
+			}
+
+			if(ptr_samples[idx] < -1.0) {
+				ptr_samples[idx] = -1.0;
+			}
+		}
+
+		handleOutput((float *) ptr_samples, num_samples / channels, channels, sample_rate);
+
+		/*
+		 * int ret;
+		 * for (int j=0;
+		 * j<gMain.gNumEncoders;
+		 * j++) { ret = handle_output(g[j], (float *)ptr_samples, numptr_samples/channels, channels, sample_rate);
+		 * }
+		 */
+		delete ptr_samples ;
+		return 1;
+	} else {
+		return 0;
+	}
+
+	return 0;
+}
+//---------------------------------------------------------------------------
+
+/*
+ =======================================================================================================================
+    Input is in interleaved float samples
+ =======================================================================================================================
+ */
+int IceCastStreamer::handleOutput(float *samples, int nsamples, int nchannels, int in_samplerate)
+{
+	int			ret = 1;
+	static int	current_insamplerate = 0;
+	static int	current_nchannels = 0;
+	long		out_samplerate = 0;
+	long		out_nch = 0;
+	int			samplecount = 0;
+	float		*samplePtr = 0;
+	int			in_nch = nchannels;
+
+	nchannels = 2;
+
+	float	*samples_resampled = NULL;
+	short	*samples_resampled_int = NULL;
+	float	*samples_rechannel = NULL;
+
+	if(g == NULL) {
+		return 1;
+	}
+
+	if(_connected) {
+	//	LogMessage(g,LOG_DEBUG, "%d Calling handle output", g->encoderNumber);
+		out_samplerate = _stream_config->getSampleRate();
+		out_nch = _stream_config->getChannels() ;
+		/*
+		if (g->gSaveFile) {
+			if(g->gSaveAsWAV) {
+				int			sizeofData = nsamples * nchannels * sizeof(short int);
+				short int	*int_samples;
+
+				int_samples = (short int *) malloc(sizeofData);
+
+				for(int i = 0; i < nsamples * nchannels; i = i + 1) {
+					int_samples[i] = (short int) (samples[i] * 32767.f);
+				}
+
+				fwrite(int_samples, sizeofData, 1, g->gSaveFile);
+				g->written += sizeofData;
+				free(int_samples);
+
+
+				// int sizeofData = nsamples*nchannels*sizeof(float);
+				// fwrite(samples, sizeofData, 1, g->gSaveFile);
+				// g->written += sizeofData;
+				// ;
+				// Write to WAV file
+			}
+		}
+		*/
+		if(current_insamplerate != in_samplerate) {
+			resetResampler();
+			current_insamplerate = in_samplerate;
+		}
+
+		if(current_nchannels != nchannels) {
+			resetResampler();
+			current_nchannels = nchannels;
+		}
+
+		samples_rechannel = new[sizeof(float) * nsamples * nchannels];
+		memset(samples_rechannel, '\000', sizeof(float) * nsamples * nchannels);
+
+		samplePtr = samples;
+
+		int make_mono = 0;
+		int make_stereo = 0;
+
+		if((in_nch == 2) && (out_nch == 1)) {
+			make_mono = 1;
+		}
+
+		if((in_nch == 1) && (out_nch == 2)) {
+			make_stereo = 1;
+		}
+
+		if((in_nch == 1) && (out_nch == 1)) {
+			make_stereo = 1;
+		}
+
+		int samplecounter = 0;
+
+		if(make_mono) {
+			for(int i = 0; i < nsamples * 2; i = i + 2) {
+				samples_rechannel[i] = (samples[i] + samples[i + 1]) / 2;
+				samples_rechannel[i + 1] = (samples[i] + samples[i + 1]) / 2;
+			}
+		}
+
+		if(make_stereo) {
+			for(int i = 0; i < nsamples; i = i + 1) {
+				samples_rechannel[samplecounter] = (samples[i]);
+				samplecounter++;
+				samples_rechannel[samplecounter] = (samples[i]);
+				samplecounter++;
+			}
+		}
+
+		if(!(make_mono) && !(make_stereo)) {
+			for(int i = 0; i < nsamples * 2; i = i + 1) {
+				samples_rechannel[i] = (samples[i]);
+			}
+		}
+
+		// LogMessage(g,LOG_DEBUG, "In samplerate = %d, Out = %d", in_samplerate, out_samplerate);
+		samplePtr = samples_rechannel;
+		if(in_samplerate != out_samplerate) {
+			nchannels = 2;
+
+			/* Call the resampler */
+			int buf_samples = ((nsamples * out_samplerate) / in_samplerate);
+
+			// LogMessage(g,LOG_DEBUG, "Initializing resampler");
+
+			initializeResampler(g, in_samplerate, nchannels);
+
+			samples_resampled = new[sizeof(float) * buf_samples * nchannels] ;
+			memset(samples_resampled, '\000', sizeof(float) * buf_samples * nchannels);
+
+			// LogMessage(g,LOG_DEBUG, "calling ocConvertAudio");
+			long	out_samples = ocConvertAudio(g,
+												 (float *) samplePtr,
+												 (float *) samples_resampled,
+												 nsamples,
+												 buf_samples);
+
+			samples_resampled_int = new[sizeof(short) * out_samples * nchannels] ;
+			memset(samples_resampled_int, '\000', sizeof(short) * out_samples * nchannels);
+
+			// LogMessage(g,LOG_DEBUG, "ready to do encoding");
+
+			if(out_samples > 0) {
+				samplecount = 0;
+
+				/* Here is the call to actually do the encoding->... */
+				// LogMessage(g,LOG_DEBUG, "do_encoding start");
+				ret = do_encoding(g, (float *) (samples_resampled), out_samples, out_nch);
+				// LogMessage(g,LOG_DEBUG, "do_encoding end (%d)", ret);
+			}
+
+			if(samples_resampled_int) {
+				delete samples_resampled_int ;
+				samples_resampled_int = NULL;
+			}
+
+			if(samples_resampled) {
+				delete samples_resampled ;
+				samples_resampled = NULL;
+			}
+		}
+		else {
+			// LogMessage(g,LOG_DEBUG, "do_encoding start");
+			ret = do_encoding(g, (float *) samples_rechannel, nsamples, nchannels);
+			// LogMessage(g,LOG_DEBUG, "do_encoding end (%d)", ret);
+		}
+
+		if(samples_rechannel) {
+			delete samples_rechannel ;
+			samples_rechannel = NULL;
+		}
+		// LogMessage(g,LOG_DEBUG, "%d Calling handle output - Ret = %d", g->encoderNumber, ret);
+	}
+
+	return ret;
+}
+//---------------------------------------------------------------------------
+
+int IceCastStreamer::resetResampler() {
+	if(_initialized_resampler) {
+		ReSampler::clear(&_resampler_state);
+	}
+
+	_initialized_resampler = 0;
+	return 1;
+}
+//---------------------------------------------------------------------------
+
+int IceCastStreamer::ocConvertAudio(float *in_samples, float *out_samples, int num_in_samples, int num_out_samples)
+{
+	int max_num_samples = ResSampler::pushMaxInput(&(_resampler_state), num_out_samples);
+	int ret_samples = ResSampler::pushInterleaved(&(_resampler_state),
+										   (SAMPLE *) out_samples,
+										   (const SAMPLE *) in_samples,
+										   max_num_samples);
+
+	return ret_samples;
+}
+
+int IceCastStreamer::doEncoding(edcastGlobals *g, float *samples, int numsamples, int nch)
+{
+	g->gCurrentlyEncoding = 1;
+
+	int				s;
+	int				count = 0;
+	unsigned char	mp3buffer[LAME_MAXMP3BUFFER];
+	int				imp3;
+	short int		*int_samples;
+	int				eos = 0;
+	int				ret = 0;
+	int				sentbytes = 0;
+	char			buf[255] = "";
+
+	g->gCurrentlyEncoding = 1;
+
+	if(g->weareconnected) {
+		s = numsamples * nch;
+
+		long	leftMax = 0;
+		long	rightMax = 0;
+		int		samplecounter = 0;
+
+		LogMessage(g,LOG_DEBUG, "determining left/right max...");
+		for(int i = 0; i < numsamples * 2; i = i + 2) {
+			leftMax += abs((int) ((float) samples[i] * 32767.f));
+			rightMax += abs((int) ((float) samples[i + 1] * 32767.f));
+		}
+
+		if(numsamples > 0) {
+			leftMax = leftMax / (numsamples * 2);
+			rightMax = rightMax / (numsamples * 2);
+			if(g->VUCallback) {
+				g->VUCallback(leftMax, rightMax);
+			}
+		}
+
+		if(g->gOggFlag)
+		{
+#ifdef HAVE_VORBIS
+			/*
+			 * If a song change was detected, close the stream and resend new ;
+			 * vorbis headers (with new comments) - all done by icecast2SendMetadata();
+			 */
+			if(g->ice2songChange) {
+				LogMessage(g,LOG_DEBUG, "Song change processing...");
+				g->ice2songChange = false;
+				icecast2SendMetadata(g);
+			}
+
+			LogMessage(g,LOG_DEBUG, "vorbis_analysis_buffer...");
+
+			float	**buffer = vorbis_analysis_buffer(&g->vd, numsamples);
+			int		samplecount = 0;
+			int		i;
+
+			samplecounter = 0;
+
+			for(i = 0; i < numsamples * 2; i = i + 2) {
+				buffer[0][samplecounter] = samples[i];
+				if(g->currentChannels == 2) {
+					buffer[1][samplecounter] = samples[i + 1];
+				}
+
+				samplecounter++;
+			}
+			LogMessage(g,LOG_DEBUG, "vorbis_analysis_wrote...");
+
+			ret = vorbis_analysis_wrote(&g->vd, numsamples);
+
+			pthread_mutex_lock(&(g->mutex));
+			LogMessage(g,LOG_DEBUG, "ogg_encode_dataout...");
+			/* Stream out what we just prepared for Vorbis... */
+			sentbytes = ogg_encode_dataout(g);
+			LogMessage(g,LOG_DEBUG, "done ogg_ecndoe_dataout...");
+			pthread_mutex_unlock(&(g->mutex));
+#endif
+		}
+
+		if(g->gAACFlag)
+		{
+#ifdef HAVE_FAAC
+			float	*buffer = (float *) malloc(numsamples * 2 * sizeof(float));
+			FloatScale(buffer, samples, numsamples * 2, g->currentChannels);
+
+			addToFIFO(g, buffer, numsamples * g->currentChannels);
+
+			while(g->faacFIFOendpos > (int)g->samplesInput) {
+				float	*buffer2 = (float *) malloc(g->samplesInput * 2 * sizeof(float));
+
+				ExtractFromFIFO(buffer2, g->faacFIFO, g->samplesInput);
+
+				int counter = 0;
+
+				for(int i = g->samplesInput; i < g->faacFIFOendpos; i++) {
+					g->faacFIFO[counter] = g->faacFIFO[i];
+					counter++;
+				}
+
+				g->faacFIFOendpos = counter;
+
+				unsigned long	dwWrite = 0;
+				unsigned char	*aacbuffer = (unsigned char *) malloc(g->maxBytesOutput);
+
+				imp3 = faacEncEncode(g->aacEncoder, (int32_t *) buffer2, g->samplesInput, aacbuffer, g->maxBytesOutput);
+
+				if(imp3) {
+					sentbytes = sendToServer(g, g->gSCSocket, (char *) aacbuffer, imp3, CODEC_TYPE);
+				}
+
+				if(buffer2) {
+					free(buffer2);
+				}
+
+				if(aacbuffer) {
+					free(aacbuffer);
+				}
+			}
+
+			if(buffer) {
+				free(buffer);
+			}
+#endif
+		}
+
+		if(g->gAACPFlag)
+		{
+#ifdef HAVE_AACP
+			static char outbuffer[32768];
+			static char inbuffer[32768];
+			static int	inbufferused = 0;
+			int			len = numsamples * g->currentChannels * sizeof(short);
+
+			int_samples = (short *) malloc(len);
+
+			int samplecount = 0;
+
+			if(g->currentChannels == 1) {
+				for(int i = 0; i < numsamples * 2; i = i + 2) {
+					int_samples[samplecount] = (short int) (samples[i] * 32767.0);
+					samplecount++;
+				}
+			}
+			else {
+				for(int i = 0; i < numsamples * 2; i++) {
+					int_samples[i] = (short int) (samples[i] * 32767.0);
+					samplecount++;
+				}
+			}
+
+			char	*bufcounter = (char *) int_samples;
+
+			for(;;) {
+				int in_used = 0;
+
+				if(len <= 0) break;
+
+				int enclen = g->aacpEncoder->Encode(in_used, bufcounter, len, &in_used, outbuffer, sizeof(outbuffer));
+
+				if(enclen > 0) {
+					sentbytes = sendToServer(g, g->gSCSocket, (char *) outbuffer, enclen, CODEC_TYPE);
+				}
+				else {
+					break;
+				}
+
+				if(in_used > 0) {
+					bufcounter += in_used;
+					len -= in_used;
+				}
+			}
+
+			if(int_samples) {
+				free(int_samples);
+			}
+#endif
+		}
+
+		if(g->gLAMEFlag)
+		{
+#ifdef HAVE_LAME
+			/* Lame encoding is simple, we are passing it interleaved samples */
+			int_samples = (short int *) malloc(numsamples * 2 * sizeof(short int));
+
+			int samplecount = 0;
+
+			if(g->currentChannels == 1) {
+				for(int i = 0; i < numsamples * 2; i = i + 2) {
+					int_samples[samplecount] = (int) (samples[i] * 32767.0);
+					samplecount++;
+				}
+			}
+			else {
+				for(int i = 0; i < numsamples * 2; i++) {
+					int_samples[i] = (int) (samples[i] * 32767.0);
+					samplecount++;
+				}
+			}
+
+#ifdef WIN32
+			unsigned long	dwWrite = 0;
+			int				err = g->beEncodeChunk(g->hbeStream,
+												   samplecount,
+												   (short *) int_samples,
+												   (PBYTE) mp3buffer,
+												   &dwWrite);
+
+			imp3 = dwWrite;
+#else
+			float	*samples_left;
+			float	*samples_right;
+
+			samples_left = (float *) malloc(numsamples * (sizeof(float)));
+			samples_right = (float *) malloc(numsamples * (sizeof(float)));
+
+			for(int i = 0; i < numsamples; i++) {
+				samples_left[i] = samples[2 * i] * 32767.0;
+				samples_right[i] = samples[2 * i + 1] * 32767.0;
+			}
+
+			imp3 = lame_encode_buffer_float(g->gf,
+											(float *) samples_left,
+											(float *) samples_right,
+											numsamples,
+											mp3buffer,
+											sizeof(mp3buffer));
+			if(samples_left) {
+				free(samples_left);
+			}
+
+			if(samples_right) {
+				free(samples_right);
+			}
+#endif
+			if(int_samples) {
+				free(int_samples);
+			}
+
+			if(imp3 == -1) {
+				LogMessage(g,LOG_ERROR, "mp3 buffer is not big enough!");
+				return -1;
+			}
+
+			/* Send out the encoded buffer */
+			sentbytes = sendToServer(g, g->gSCSocket, (char *) mp3buffer, imp3, CODEC_TYPE);
+#endif
+		}
+
+		if(g->gFLACFlag)
+		{
+#ifdef HAVE_FLAC
+			INT32		*int32_samples;
+
+			int32_samples = (INT32 *) malloc(numsamples * 2 * sizeof(INT32));
+
+			int samplecount = 0;
+
+			if(g->currentChannels == 1) {
+				for(int i = 0; i < numsamples * 2; i = i + 2) {
+					int32_samples[samplecount] = (INT32) (samples[i] * 32767.0);
+					samplecount++;
+				}
+			}
+			else {
+				for(int i = 0; i < numsamples * 2; i++) {
+					int32_samples[i] = (INT32) (samples[i] * 32767.0);
+					samplecount++;
+				}
+			}
+
+			FLAC__stream_encoder_process_interleaved(g->flacEncoder, int32_samples, numsamples);
+
+			if(int32_samples) {
+				free(int32_samples);
+			}
+
+			if(g->flacFailure) {
+				sentbytes = 0;
+			}
+			else {
+				sentbytes = 1;
+			}
+#endif
+		}
+
+		/*
+		 * Generic error checking, if there are any socket problems, the trigger ;
+		 * a disconnection handling->..
+		 */
+		if(sentbytes < 0) {
+			int rret = triggerDisconnect(g);
+			if (rret == 0) {
+				return 0;
+			}
+		}
+	}
+
+	g->gCurrentlyEncoding = 0;
+	return 1;
+}
+
+

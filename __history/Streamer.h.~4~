@@ -1,0 +1,47 @@
+//---------------------------------------------------------------------------
+
+#ifndef StreamerH
+#define StreamerH
+//---------------------------------------------------------------------------
+
+#include <string>
+
+
+class Streamer
+{
+public:
+	Streamer() { }
+	~Streamer() { }
+
+	bool connect() { }
+	bool connect(string host, string port, string username, string password) { }
+	bool disconnect() { }
+	bool startStreaming() { }
+	bool stopStreaming() {}
+
+	void setHost(string value) { _host = value ; }
+	string getHost() { return(_host) ; }
+
+	void setPort(string value) { _port = value ; }
+	string getPort() { return(_port) ; }
+
+	void setUsername(string value) { _username = value ; }
+	string getUsername() { return(_username) ; }
+
+	void setPassword(string value) { _password = value ; }
+	string getPassword() { return(_password) ; }
+
+	void setType(string value) { _type = value ; }
+	string getType() { return(_type) ; }
+
+protected:
+	string _host ;
+	string _port ;
+	string _username ;
+	string _password ;
+	string _type ;
+
+private:
+};
+
+#endif

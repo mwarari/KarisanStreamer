@@ -1,0 +1,18 @@
+//---------------------------------------------------------------------------
+
+#ifndef UtilsH
+#define UtilsH
+//---------------------------------------------------------------------------
+
+class Utils {
+	public:
+
+	protected:
+
+	private:
+		/* Gratuitously ripped from util.c */
+		char	base64table[64] ;
+
+		signed char	base64decode[256] ;
+};
+#endif

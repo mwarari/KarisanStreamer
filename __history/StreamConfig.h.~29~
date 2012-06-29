@@ -1,0 +1,126 @@
+//---------------------------------------------------------------------------
+
+#ifndef StreamConfigH
+#define StreamConfigH
+//---------------------------------------------------------------------------
+
+#include <string>
+#include <memory>
+#include <IniFiles.hpp>
+
+using namespace std ;
+
+class StreamConfig
+{
+	public:
+		__fastcall StreamConfig() ;
+		~StreamConfig() ;
+
+		void __fastcall load() ;
+		void __fastcall save() ;
+		void __fastcall erase() ;
+
+		int getBitRate() { return(_bitrate) ; }
+		void setBitRate(int value) { _bitrate = value ; }
+
+		int getQuality() { return(_quality) ; }
+		void setQuality(int value) { _quality = value ; }
+
+		int getSampleRate() { return(_sample_rate) ; }
+		void setSampleRate(int value) { _sample_rate = value ; }
+
+		string getChannels() { return(_channels) ; }
+		void setChannels(string value) { _channels = value ; }
+
+		string getEncoderType() { return(_encoder_type) ; }
+		void setEncoderType(string value) { _encoder_type = value ; }
+
+		bool getJointStereo() { return(_joint_stereo) ; }
+		void setJointStereo(bool value) { _joint_stereo = value ; }
+
+		string getServerType() { return(_server_type) ; }
+		void setServerType(string value) { _server_type = value ; }
+
+		string getServerIP() { return(_server_type) ; }
+		void setServerIP(string value) { _server_type = value ; }
+
+		int getServerPort() { return(_server_port) ; }
+		void setServerPort(int value) { _server_port = value ; }
+
+		string getPassword() { return(_server_type) ; }
+		void setPassword(string value) { _server_type = value ; }
+
+		string getMountPoint() { return(_mount_point) ; }
+		void setMountPoint(string value) { _mount_point = value ; }
+
+		int getReconnectInterval() { return(_reconnect_interval) ; }
+		void setReconnectInterval(int value) { _reconnect_interval = value ; }
+
+		float getAttenuation() { return(_attenuation) ; }
+		void setAttenuation(float value) { _attenuation = value ; }
+
+		bool getPublicServer() { return(_public_server) ; }
+		void setPublicServer(bool value) { _public_server = value ; }
+
+		string getYPStreamName() { return(_ypstream_name) ; }
+		void setYPStreamName(string value) { _ypstream_name = value ; }
+
+		string getStreamDescription() { return(_stream_description) ; }
+		void setStreamDescription(string value) { _stream_description = value ; }
+
+		string getStreamURL() { return(_stream_url) ; }
+		void setStreamURL(string value) { _stream_url = value ; }
+
+		string getStreamGenre() { return(_stream_genre) ; }
+		void setStreamGenre(string value) { _stream_genre = value ; }
+
+		bool getSaveStream() { return(_save_stream) ;}
+		void setSaveStream(bool value) { _save_stream = value ; }
+
+		bool getSaveAsWAV() { return(_save_as_wav) ; }
+		void setSaveAsWAV(bool value) { _save_as_wav = value ; }
+
+		string getArchiveDirectory() { return(_archive_directory) ; }
+		void setArchiveDirectory(string value) { _archive_directory = value ; }
+
+		int getLogLevel() { return(_log_level) ; }
+		void setLogLevel(int value) { _log_level = value ; }
+
+		string getLogFile() { return(_log_file) ; }
+		void setLogFile(string value) { _log_file = value ; }
+
+		string getName() { return(_stream_name) ; }
+		void setName(string value) { _stream_name = value ; }
+
+	private:
+		// Basic Settings
+		string _stream_name ;
+		int _bitrate ;
+		int _quality ;
+		int _sample_rate;
+		string _channels ;
+		string _encoder_type ;
+		bool _joint_stereo ;
+		string _server_type ;
+		string _server_ip ;
+		int _server_port ;
+		string _password ;
+		string _mount_point ;
+		int _reconnect_interval ;
+		float _attenuation ;
+
+		// Yellow Pages Settings
+		bool _public_server ;
+		string _ypstream_name ;
+		string _stream_description ;
+		string _stream_url ;
+		string _stream_genre ;
+
+		// Advanced Settings
+		bool _save_stream ;
+		bool _save_as_wav ;
+		int _log_level ;
+		string _archive_directory ;
+		string _log_file ;
+};
+#endif

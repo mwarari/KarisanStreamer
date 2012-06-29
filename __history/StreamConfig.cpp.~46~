@@ -1,0 +1,135 @@
+//---------------------------------------------------------------------------
+
+
+#pragma hdrstop
+
+#include "StreamConfig.h"
+
+//---------------------------------------------------------------------------
+
+#pragma package(smart_init)
+
+__fastcall StreamConfig::StreamConfig()
+{
+}
+//---------------------------------------------------------------------------
+
+StreamConfig::~StreamConfig()
+{
+
+}
+//---------------------------------------------------------------------------
+
+void __fastcall StreamConfig::load()
+{
+	setName(_config_repository->ReadString("Streams", "Name", "").t_str()) ;
+
+	setBitRate(_config_repository->ReadInteger("Streams", "BitRate", 0)) ;
+
+	setQuality(_config_repository->ReadInteger("Streams", "Quality", 0)) ;
+
+	setSampleRate(_config_repository->ReadInteger("Streams", "SampleRate", 0)) ;
+
+	setChannels(_config_repository->ReadString("Streams", "Channels", "").t_str()) ;
+
+	setEncoderType(_config_repository->ReadString("Streams", "EncoderType", "").t_str()) ;
+
+	setJointStereo(_config_repository->ReadBool("Streams", "JointStereo", FALSE)) ;
+
+	setServerType(_config_repository->ReadString("Streams", "ServerType", "").t_str()) ;
+
+	setServerIP(_config_repository->ReadString("Streams", "ServerIP", "").t_str()) ;
+
+	setServerPort(_config_repository->ReadInteger("Streams", "ServerPort", 0)) ;
+
+	setPassword(_config_repository->ReadString("Streams", "Password", "").t_str()) ;
+
+	setMountPoint(_config_repository->ReadString("Streams", "MountPoint", "").t_str()) ;
+
+	setReconnectInterval(_config_repository->ReadInteger("Streams", "ReconnectInterval", 0)) ;
+
+	setAttenuation(_config_repository->ReadFloat("Streams", "Attenuation", 0.0)) ;
+
+	setPublicServer(_config_repository->ReadBool("Streams", "PublicServer", FALSE)) ;
+
+	setYPStreamName(_config_repository->ReadString("Streams", "YPStreamName", "").t_str()) ;
+
+	setStreamDescription(_config_repository->ReadString("Streams", "StreamDescription", "").t_str()) ;
+
+	setStreamURL(_config_repository->ReadString("Streams", "StreamURL", "").t_str()) ;
+
+	setStreamGenre(_config_repository->ReadString("Streams", "StreamGenre", "").t_str()) ;
+
+	setSaveStream(_config_repository->ReadBool("Streams", "SaveStream", FALSE)) ;
+
+	setSaveAsWAV(_config_repository->ReadBool("Streams", "SaveAsWAV", FALSE)) ;
+
+	setArchiveDirectory(_config_repository->ReadString("Streams", "ArchiveDirectory", "").t_str()) ;
+
+	setLogLevel(_config_repository->ReadInteger("Streams", "LogLevel", 0)) ;
+
+	setLogFile(_config_repository->ReadString("Streams", "LogFile", "").t_str()) ;
+}
+//---------------------------------------------------------------------------
+
+void __fastcall StreamConfig::save()
+{
+	if(_config_repository->SectionExists("Streams"))
+		_config_repository->EraseSection("Streams") ;
+
+	_config_repository->WriteString("Streams", "Name", getName().c_str()) ;
+
+	_config_repository->WriteInteger("Streams", "BitRate", getBitRate()) ;
+
+	_config_repository->WriteInteger("Streams", "Quality", getQuality()) ;
+
+	_config_repository->WriteInteger("Streams", "SampleRate", getSampleRate()) ;
+
+	_config_repository->WriteString("Streams", "Channels", UnicodeString(getChannels().c_str())) ;
+
+	_config_repository->WriteString("Streams", "EncoderType", UnicodeString(getEncoderType().c_str())) ;
+
+	_config_repository->WriteBool("Streams", "JointStereo", getJointStereo()) ;
+
+	_config_repository->WriteString("Streams", "ServerType", UnicodeString(getServerType().c_str())) ;
+
+	_config_repository->WriteString("Streams", "ServerIP", UnicodeString(getServerIP().c_str())) ;
+
+	_config_repository->WriteInteger("Streams", "ServerPort", getServerPort()) ;
+
+	_config_repository->WriteString("Streams", "Password", UnicodeString(getPassword().c_str())) ;
+
+	_config_repository->WriteString("Streams", "MountPoint", UnicodeString(getMountPoint().c_str())) ;
+
+	_config_repository->WriteInteger("Streams", "ReconnectInterval", getReconnectInterval()) ;
+
+	_config_repository->WriteFloat("Streams", "Attenuation", getAttenuation()) ;
+
+	_config_repository->WriteBool("Streams", "PublicServer", getPublicServer()) ;
+
+	_config_repository->WriteString("Streams", "StreamName", UnicodeString(getYPStreamName().c_str())) ;
+
+	_config_repository->WriteString("Streams", "StreamDescription", UnicodeString(getStreamDescription().c_str())) ;
+
+	_config_repository->WriteString("Streams", "StreamURL", UnicodeString(getStreamURL().c_str())) ;
+
+	_config_repository->WriteString("Streams", "StreamGenre", UnicodeString(getStreamGenre().c_str())) ;
+
+	_config_repository->WriteBool("Streams", "SaveStream", getSaveStream()) ;
+
+	_config_repository->WriteBool("Streams", "SaveAsWAV",	getSaveAsWAV()) ;
+
+	_config_repository->WriteString("Streams", "ArchiveDirectory", UnicodeString(getArchiveDirectory().c_str())) ;
+
+	_config_repository->WriteInteger("Streams", "LogLevel", getLogLevel()) ;
+
+	_config_repository->WriteString("Streams", "LogFile", UnicodeString(getLogFile().c_str())) ;
+
+}
+//---------------------------------------------------------------------------
+
+void __fastcall StreamConfig::erase()
+{
+ 	_config_repository->EraseSection("Streams") ;
+}
+//---------------------------------------------------------------------------

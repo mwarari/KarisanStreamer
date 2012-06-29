@@ -1,0 +1,54 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!-- C++Builder XML Project -->
+<PROJECT>
+  <MACROS>
+    <VERSION value="BCB.06.00"/>
+    <PROJECT value="CLXMDIApp"/>
+    <OBJFILES value="CLXMDIApp.o CLXAbout.o CLXChildWin.o CLXMain.o"/>
+    <RESFILES value="CLXMDIApp.res"/>
+    <DEFFILE value=""/>
+    <RESDEPEN value="$(RESFILES) CLXAbout.xfm CLXChildWin.xfm CLXMain.xfm"/>
+    <LIBFILES value=""/>
+    <LIBRARIES value="visualclx.a rtl.a vcl.lib visualclx.lib rtl.lib"/>
+    <SPARELIBS value="rtl.lib visualclx.lib vcl.lib rtl.a visualclx.a"/>
+    <PACKAGES value="rtl.bpi visualclx.bpi dataclx.bpi visualdbclx.bpi netclx.bpi 
+      netdataclx.bpi xmlrtl.bpi indy.bpi webdsnapclx.bpi websnapclx.bpi soaprtl.bpi"/>
+    <PATHCPP value=".;"/>
+    <PATHPAS value=".;"/>
+    <PATHRC value=".;"/>
+    <PATHASM value=".;"/>
+    <LINKER value="ilink32"/>
+    <USERDEFINES value="_DEBUG"/>
+    <SYSDEFINES value=""/>
+    <MAINSOURCE value="CLXMDIApp.cpp"/>
+    <INCLUDEPATH value="$(BCB)/include:$(BCB)/include/vcl:/usr/include"/>
+    <LIBPATH value="$(BCB)/lib/obj:$(BCB)/lib:/usr/lib:/lib:/usr/X11R6/lib:$(BCB)/bin"/>
+    <WARNINGS value=""/>
+    <OTHERFILES value=""/>
+  </MACROS>
+  <OPTIONS>
+    <CFLAG1 value="-t -X- -a8 -b -k -vi"/>
+    <PFLAGS value="-$YD -$A8 -$YD-$A8"/>
+    <AFLAGS value="/mx /w2 /zd"/>
+    <LFLAGS value="-D&quot;&quot; -aa -Tpe"/>
+    <OTHERFILES value=""/>
+  </OPTIONS>
+  <LINKER>
+    <ALLOBJ value=""/>
+    <ALLLIB value=""/>
+    <OTHERFILES value=""/>
+  </LINKER>
+  <FILELIST>
+      <FILE FILENAME="CLXMDIApp.res" FORMNAME="" UNITNAME="CLXMDIApp.res" CONTAINERID="ResTool" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="CLXMDIApp.cpp" FORMNAME="" UNITNAME="CLXMDIApp" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="CLXAbout.cpp" FORMNAME="AboutBox" UNITNAME="CLXAbout" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="CLXChildWin.cpp" FORMNAME="MDIChild" UNITNAME="CLXChildWin" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+      <FILE FILENAME="CLXMain.cpp" FORMNAME="MainForm" UNITNAME="CLXMain" CONTAINERID="CCompiler" DESIGNCLASS="" LOCALCOMMAND=""/>
+  </FILELIST>
+  <BUILDTOOLS>
+  </BUILDTOOLS>
+
+  <IDEOPTIONS>
+  </IDEOPTIONS>
+</PROJECT>
+

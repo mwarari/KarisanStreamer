@@ -1,0 +1,108 @@
+//---------------------------------------------------------------------------
+
+#ifndef IceCastStreamerH
+#define IceCastStreamerH
+//---------------------------------------------------------------------------
+
+#include "AudioStreamer.h"
+#include "StreamConfig.h"
+#include "ReSampler.h"
+#include <map>
+#include <string>
+
+
+using namespace std ;
+typedef float SAMPLE;
+
+typedef struct
+{
+	unsigned int channels, infreq, outfreq, taps;
+	float *table;
+	SAMPLE *pool;
+
+	/* dynamic bits */
+	int poolfill;
+	int offset;
+} res_state;
+
+typedef struct tagLAMEOptions {
+	int		cbrflag;
+	int		out_samplerate;
+	int		quality;
+	int		mode;
+	int		brate;
+	int		copywrite;
+	int		original;
+	int		strict_ISO;
+	int		disable_reservoir;
+	char	VBR_mode[25];
+	int		VBR_mean_bitrate_kbps;
+	int		VBR_min_bitrate_kbps;
+	int		VBR_max_bitrate_kbps;
+	int		lowpassfreq;
+	int		highpassfreq;
+} LAMEOptions;
+
+class IceCastStreamer: public AudioStreamer
+{
+	public:
+		IceCastStreamer(StreamConfig *stream_config = NULL) ;
+		virtual ~IceCastStreamer() ;
+
+		virtual bool connect() ;
+		virtual bool disconnect() ;
+		void setChannels(int value) ;
+		int getChannels();
+
+		void setStreamConfig(StreamConfig *value) ;
+
+	protected:
+		int resetResampler() ;
+		int initializeEncoder() ;
+		void res_clear(res_state *state) ;
+		int setCurrentSongTitle(char *song) ;
+		int updateSongTitle(int forceURL) ;
+		void replaceString(char *source, char *dest, char *from, char *to) ;
+
+		void stopRecording() ;
+		int startRecording(int input_card) ;
+
+		BOOL CALLBACK BASSwaveInputProc(HRECORD handle, const void *buffer, DWORD length, void *user) ;
+		int handleOutput(float *samples, int nsamples, int nchannels, int in_samplerate) ;
+		int resetResampler() ;
+
+	private:
+		StreamConfig *_stream_config ;
+
+		int _channels ;
+		LAMEOptions	_lame_options;
+		int _current_bitrate_max ;
+		int _current_bitrate ;
+		DWORD _buffer_size ;
+		void* _hbe_stream ;
+		res_state	_resampler;
+		int	_initialized_resampler;
+		DWORD _samples ;
+		int _lame_flag ;
+		bool _joint_stereo ;
+		int _lame_preset ;
+		bool _is_connected ;
+		int _ogg_flag ;
+		int _sc_flag ;
+		int _icecast_flag ;
+		int _icecast2_flag ;
+		string _current_song ;
+		string _song_title ;
+		bool _lock_song_title ;
+		string _manual_song_title ;
+		bool _ice2song_change ;
+
+		DWORD _recording_handle ;
+		int _recording_input_card ;
+
+		bool _live_recording ;
+		res_state _resampler_state ;
+		bool _initialized_resampler ;
+
+};
+#endif

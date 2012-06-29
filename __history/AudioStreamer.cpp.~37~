@@ -1,0 +1,534 @@
+//---------------------------------------------------------------------------
+
+
+#pragma hdrstop
+
+#include "AudioStreamer.h"
+#include "bass.hpp"
+
+
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+
+AudioStreamer::AudioStreamer()
+{
+
+}
+//---------------------------------------------------------------------------
+
+AudioStreamer::~AudioStreamer()
+{
+
+}
+//---------------------------------------------------------------------------
+
+bool AudioStreamer::connectDataChannel()
+{
+	if(_data_channel.doConnect(_host, _port) == -1) {
+		return(false) ;
+	} else {
+		return(true) ;
+    }
+
+}
+//---------------------------------------------------------------------------
+
+bool AudioStreamer::connectDataChannel(string host, unsigned int port)
+{
+	_host = host ;
+	_port = port ;
+
+	return(connectDataChannel()) ;
+}
+//---------------------------------------------------------------------------
+
+bool AudioStreamer::connectControlChannel()
+{
+	if(_control_channel.doConnect(_host, _port) == -1) {
+		return(false) ;
+	} else {
+        return(true) ;
+    }
+}
+//---------------------------------------------------------------------------
+
+bool AudioStreamer::connectControlChannel(string host, unsigned int port)
+{
+	_host = host ;
+	_port = port ;
+
+	return(connectControlChannel()) ;
+}
+//---------------------------------------------------------------------------
+
+bool AudioStreamer::startStreaming()
+{
+	return(false) ;
+}
+//---------------------------------------------------------------------------
+
+bool AudioStreamer::stopStreaming()
+{
+	return(false) ;
+}
+//---------------------------------------------------------------------------
+
+void AudioStreamer::setHost(string value)
+{
+	_host = value ;
+}
+//---------------------------------------------------------------------------
+
+string AudioStreamer::getHost()
+{
+	return(_host) ;
+}
+//---------------------------------------------------------------------------
+
+void AudioStreamer::setPort(unsigned int value)
+{
+	_port = value ;
+}
+//---------------------------------------------------------------------------
+
+unsigned int AudioStreamer::getPort()
+{
+	return(_port) ;
+}
+//---------------------------------------------------------------------------
+
+void AudioStreamer::setUsername(string value)
+{
+	_username = value ;
+}
+//---------------------------------------------------------------------------
+
+string AudioStreamer::getUsername()
+{
+	return(_username) ;
+}
+//---------------------------------------------------------------------------
+
+void AudioStreamer::setPassword(string value)
+{
+	_password = value ;
+}
+//---------------------------------------------------------------------------
+
+string AudioStreamer::getPassword()
+{
+	return(_password) ;
+}
+//---------------------------------------------------------------------------
+
+bool AudioStreamer::isConnected()
+{
+	return(_connected) ;
+}
+//---------------------------------------------------------------------------
+
+void AudioStreamer::setAudioFormat(int value)
+{
+	_audio_format = value ;
+
+	switch(_audio_format) {
+		case OGG:
+			_content_type = "audio/ogg" ;
+			break ;
+		case AAC:
+			_content_type = "audio/aac" ;
+			break ;
+		case AACP:
+			_content_type = "audio/aacp" ;
+			break ;
+		case FLAC:
+			_content_type = "audio/ogg" ;
+			break ;
+		case MPEG:
+			_content_type = "audio/mpeg" ;
+			break ;
+		default:
+			_content_type = "audio/mpeg" ;
+			break ;
+    } ;
+}
+//---------------------------------------------------------------------------
+
+int AudioStreamer::getAudioFormat()
+{
+	return(_audio_format) ;
+}
+//---------------------------------------------------------------------------
+
+string AudioStreamer::getContentType()
+{
+	return(_content_type) ;
+}
+//---------------------------------------------------------------------------
+
+int AudioStreamer::sendToDataChannel(char *data, int length, int type)
+{
+	int ret = 0;
+
+	switch(type) {
+		case HEADER_TYPE:
+			ret = send(_data_channel.getSocket(), data, length, 0);
+			break;
+
+		case CODEC_TYPE:
+			ret = send(_data_channel.getSocket(), data, length, 0);
+			break;
+	}
+
+	return ret;
+}
+//---------------------------------------------------------------------------
+
+int AudioStreamer::closeDataChannel()
+{
+	return(_data_channel.doClose()) ;
+}
+//---------------------------------------------------------------------------
+
+int AudioStreamer::sendToControlChannel(char *data, int length, int type)
+{
+	int ret = 0;
+
+	switch(type) {
+		case HEADER_TYPE:
+			ret = send(_control_channel.getSocket(), data, length, 0);
+			break;
+
+		case CODEC_TYPE:
+			ret = send(_control_channel.getSocket(), data, length, 0);
+			break;
+	}
+
+	return ret;
+}
+//---------------------------------------------------------------------------
+
+int AudioStreamer::closeControlChannel()
+{
+	return(_control_channel.doClose()) ;
+}
+//---------------------------------------------------------------------------
+
+int AudioStreamer::receiveFromDataChannel(char *data, int length)
+{
+	return(_data_channel.receive(data, length, 0)) ;
+}
+//---------------------------------------------------------------------------
+
+int AudioStreamer::receiveFromControlChannel(char *data, int length)
+{
+	return(_control_channel.receive(data, length, 0)) ;
+}
+//---------------------------------------------------------------------------
+
+void AudioStreamer::stopRecording() {
+	BASS_ChannelStop(_recording_handle);
+	m_BASSOpen = 0;
+	BASS_RecordFree();
+	gLiveRecording = false;
+}
+//---------------------------------------------------------------------------
+
+int AudioStreamer::startRecording(int m_CurrentInputCard) {
+	char	buffer[1024] = "";
+	char	buf[255] = "";
+
+	int		ret = BASS_RecordInit(_recording_input_card);
+	m_BASSOpen = 1;
+
+	if(!ret) {
+		DWORD	errorCode = BASS_ErrorGetCode();
+		switch(errorCode) {
+			case BASS_ERROR_ALREADY:
+				// pWindow->generalStatusCallback((char *) "Recording device already opened!");
+				return 0;
+
+			case BASS_ERROR_DEVICE:
+				// pWindow->generalStatusCallback((char *) "Recording device invalid!");
+				return 0;
+
+			case BASS_ERROR_DRIVER:
+				// pWindow->generalStatusCallback((char *) "Recording device driver unavailable!");
+				return 0;
+
+			default:
+				// pWindow->generalStatusCallback((char *) "There was an error opening the preferred Digital Audio In device!");
+				return 0;
+		}
+	}
+
+	_recording_handle = BASS_RecordStart(44100, 2, 0, &BASSwaveInputProc, NULL);
+
+	int		idx = 0;
+	char	*name;
+	for(idx = 0; name = (char *)BASS_RecordGetInputName(idx); idx++) {
+		float vol = 0.0;
+		DWORD status = BASS_RecordGetInput(idx, &vol);
+		if(!(status & BASS_INPUT_OFF)) {
+			char	msg[255] = "";
+			sprintf(msg, "Recording from %s", name);
+			// pWindow->generalStatusCallback((void *) msg);
+		}
+	}
+
+	_live_recording = true;
+
+	return 1;
+}
+//---------------------------------------------------------------------------
+
+BOOL CALLBACK AudioStreamer::BASSwaveInputProc(HRECORD handle, const void *buffer, DWORD length, void *user) {
+	int			idx ;
+	char		*name ;
+	static char current_device[1024] = "";
+
+	if(_live_recording) {
+		for(idx = 0; name = (char *)BASS_RecordGetInputName(idx); idx++) {
+			float current_volume;
+
+			DWORD status = BASS_RecordGetInput(idx, &current_volume);
+			if(!(status & BASS_INPUT_OFF)) {
+				if(strcmp(current_device, name)) {
+					strcpy(current_device, name);
+
+					char	msg[255] = "";
+					sprintf(msg, "Recording from %s", currentDevice);
+					// pWindow->generalStatusCallback((void *) msg);
+				}
+
+				/*
+				 * setCurrentRecordingName(currentDevice);
+				 */
+			}
+		}
+
+		unsigned int	c_size = length;	/* in bytes. */
+		short			*z = (short *) buffer;	/* signed short for pcm data. */
+
+		int				num_samples = c_size / sizeof(short);
+
+		int				channels = 2;
+		int				sample_rate = 44100;
+		float			*ptr_samples;
+
+		/*
+		 * float ptr_samples[8196*16];
+		 */
+		ptr_samples = new[(sizeof(float) * numptr_samples * 2];
+		memset(ptr_samples, '\000', sizeof(float) * numptr_samples * 2);
+
+		long	avgLeft = 0;
+		long	avgRight = 0;
+		int		flip = 0;
+
+		for(int idx = 0; idx < num_samples; idx++) {
+			signed int	sample;
+			sample = z[idx];
+			ptr_samples[idx] = sample / 32767.f;
+
+			/* clipping */
+			if(ptr_samples[idx] > 1.0) {
+				ptr_samples[idx] = 1.0;
+			}
+
+			if(ptr_samples[idx] < -1.0) {
+				ptr_samples[idx] = -1.0;
+			}
+		}
+
+		handleAllOutput((float *) ptr_samples, num_samples / channels, channels, sample_rate);
+
+		/*
+		 * int ret;
+		 * for (int j=0;
+		 * j<gMain.gNumEncoders;
+		 * j++) { ret = handle_output(g[j], (float *)ptr_samples, numptr_samples/channels, channels, sample_rate);
+		 * }
+		 */
+		delete ptr_samples ;
+		return 1;
+	} else {
+		return 0;
+	}
+
+	return 0;
+}
+//---------------------------------------------------------------------------
+
+/*
+ =======================================================================================================================
+    Input is in interleaved float samples
+ =======================================================================================================================
+ */
+int AudioStreamer::handleOutput(edcastGlobals *g, float *samples, int nsamples, int nchannels, int in_samplerate) {
+	int			ret = 1;
+	static int	current_insamplerate = 0;
+	static int	current_nchannels = 0;
+	long		out_samplerate = 0;
+	long		out_nch = 0;
+	int			samplecount = 0;
+	float		*samplePtr = 0;
+	int			in_nch = nchannels;
+
+	nchannels = 2;
+
+	float	*samples_resampled = NULL;
+	short	*samples_resampled_int = NULL;
+	float	*samples_rechannel = NULL;
+
+	if(g == NULL) {
+		return 1;
+	}
+
+	if(g->weareconnected) {
+	//	LogMessage(g,LOG_DEBUG, "%d Calling handle output", g->encoderNumber);
+		out_samplerate = getCurrentSamplerate(g);
+		out_nch = getCurrentChannels(g);
+		if (g->gSaveFile) {
+			if(g->gSaveAsWAV) {
+				int			sizeofData = nsamples * nchannels * sizeof(short int);
+				short int	*int_samples;
+
+				int_samples = (short int *) malloc(sizeofData);
+
+				for(int i = 0; i < nsamples * nchannels; i = i + 1) {
+					int_samples[i] = (short int) (samples[i] * 32767.f);
+				}
+
+				fwrite(int_samples, sizeofData, 1, g->gSaveFile);
+				g->written += sizeofData;
+				free(int_samples);
+
+				/*
+				 * int sizeofData = nsamples*nchannels*sizeof(float);
+				 * fwrite(samples, sizeofData, 1, g->gSaveFile);
+				 * g->written += sizeofData;
+				 * ;
+				 * Write to WAV file
+				 */
+			}
+		}
+		if(current_insamplerate != in_samplerate) {
+			resetResampler(g);
+			current_insamplerate = in_samplerate;
+		}
+
+		if(current_nchannels != nchannels) {
+			resetResampler(g);
+			current_nchannels = nchannels;
+		}
+
+		samples_rechannel = (float *) malloc(sizeof(float) * nsamples * nchannels);
+		memset(samples_rechannel, '\000', sizeof(float) * nsamples * nchannels);
+
+		samplePtr = samples;
+
+		int make_mono = 0;
+		int make_stereo = 0;
+
+		if((in_nch == 2) && (out_nch == 1)) {
+			make_mono = 1;
+		}
+
+		if((in_nch == 1) && (out_nch == 2)) {
+			make_stereo = 1;
+		}
+
+		if((in_nch == 1) && (out_nch == 1)) {
+			make_stereo = 1;
+		}
+
+		int samplecounter = 0;
+
+		if(make_mono) {
+			for(int i = 0; i < nsamples * 2; i = i + 2) {
+				samples_rechannel[i] = (samples[i] + samples[i + 1]) / 2;
+				samples_rechannel[i + 1] = (samples[i] + samples[i + 1]) / 2;
+			}
+		}
+
+		if(make_stereo) {
+			for(int i = 0; i < nsamples; i = i + 1) {
+				samples_rechannel[samplecounter] = (samples[i]);
+				samplecounter++;
+				samples_rechannel[samplecounter] = (samples[i]);
+				samplecounter++;
+			}
+		}
+
+		if(!(make_mono) && !(make_stereo)) {
+			for(int i = 0; i < nsamples * 2; i = i + 1) {
+				samples_rechannel[i] = (samples[i]);
+			}
+		}
+
+		LogMessage(g,LOG_DEBUG, "In samplerate = %d, Out = %d", in_samplerate, out_samplerate);
+		samplePtr = samples_rechannel;
+		if(in_samplerate != out_samplerate) {
+			nchannels = 2;
+
+			/* Call the resampler */
+			int buf_samples = ((nsamples * out_samplerate) / in_samplerate);
+
+			LogMessage(g,LOG_DEBUG, "Initializing resampler");
+
+			initializeResampler(g, in_samplerate, nchannels);
+
+			samples_resampled = (float *) malloc(sizeof(float) * buf_samples * nchannels);
+			memset(samples_resampled, '\000', sizeof(float) * buf_samples * nchannels);
+
+			LogMessage(g,LOG_DEBUG, "calling ocConvertAudio");
+			long	out_samples = ocConvertAudio(g,
+												 (float *) samplePtr,
+												 (float *) samples_resampled,
+												 nsamples,
+												 buf_samples);
+
+			samples_resampled_int = (short *) malloc(sizeof(short) * out_samples * nchannels);
+			memset(samples_resampled_int, '\000', sizeof(short) * out_samples * nchannels);
+
+			LogMessage(g,LOG_DEBUG, "ready to do encoding");
+
+			if(out_samples > 0) {
+				samplecount = 0;
+
+				/* Here is the call to actually do the encoding->... */
+				LogMessage(g,LOG_DEBUG, "do_encoding start");
+				ret = do_encoding(g, (float *) (samples_resampled), out_samples, out_nch);
+				LogMessage(g,LOG_DEBUG, "do_encoding end (%d)", ret);
+			}
+
+			if(samples_resampled_int) {
+				free(samples_resampled_int);
+				samples_resampled_int = NULL;
+			}
+
+			if(samples_resampled) {
+				free(samples_resampled);
+				samples_resampled = NULL;
+			}
+		}
+		else {
+			LogMessage(g,LOG_DEBUG, "do_encoding start");
+			ret = do_encoding(g, (float *) samples_rechannel, nsamples, nchannels);
+			LogMessage(g,LOG_DEBUG, "do_encoding end (%d)", ret);
+		}
+
+		if(samples_rechannel) {
+			free(samples_rechannel);
+			samples_rechannel = NULL;
+		}
+		LogMessage(g,LOG_DEBUG, "%d Calling handle output - Ret = %d", g->encoderNumber, ret);
+	}
+
+	return ret;
+}
+//---------------------------------------------------------------------------
+
+
+

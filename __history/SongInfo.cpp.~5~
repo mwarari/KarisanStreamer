@@ -1,0 +1,53 @@
+//---------------------------------------------------------------------------
+
+
+#pragma hdrstop
+
+#include "SongInfo.h"
+
+//---------------------------------------------------------------------------
+
+#pragma package(smart_init)
+
+__fastcall TSongInfo::TSongInfo()
+{
+
+}
+//---------------------------------------------------------------------------
+
+__fastcall TSongInfo(const TSongInfo copy)
+{
+	_title = copy.getTitle() ;
+	_artist = copy.getArtist() ;
+	_album = copy.getAlbum() ;
+	_track_no = copy.getTrackNo() ;
+	_length = copy.getLength();
+	_genre = copy.getGenre();
+	_year = copy.getYear();
+	_filename = copy.getFilename();
+}
+//---------------------------------------------------------------------------
+
+
+
+__fastcall TSongInfo::~TSongInfo()
+{
+
+}
+//---------------------------------------------------------------------------
+
+TSongInfo& TSongInfo::operator=(const TSonfInfo &copy)
+{
+	_title = copy.getTitle() ;
+	_artist = copy.getArtist() ;
+	_album = copy.getAlbum() ;
+	_track_no = copy.getTrackNo() ;
+	_length = copy.getLength();
+	_genre = copy.getGenre();
+	_year = copy.getYear();
+	_filename = copy.getFilename();
+
+	return(this);
+}
+//---------------------------------------------------------------------------
+

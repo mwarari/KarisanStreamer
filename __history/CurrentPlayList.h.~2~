@@ -1,0 +1,18 @@
+//---------------------------------------------------------------------------
+
+#ifndef CurrentPlayListH
+#define CurrentPlayListH
+//---------------------------------------------------------------------------
+
+class TCurrentPlayList
+{
+	public:
+		__fastcall TCurrentPlayList() ;
+		__fastcall ~TCurrentPlayList() ;
+
+
+
+	private:
+
+};
+#endif
